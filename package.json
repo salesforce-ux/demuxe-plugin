@@ -1,5 +1,5 @@
 {
-  "name": "demuxe",
+  "name": "Demuxe",
   "description": "A plugin for developing Demuxe Magick Flows",
   "version": "1.0.0",
   "engines": {
@@ -10,7 +10,7 @@
     "url": "git+https://github.com/salesforce-ux/demuxe-plugin"
   },
   "skpm": {
-    "name": "demuxe",
+    "name": "Demuxe",
     "manifest": "src/manifest.json",
     "main": "demuxe.sketchplugin",
     "assets": [
@@ -26,7 +26,5 @@
   },
   "devDependencies": {
     "@skpm/builder": "^0.7.0"
-  },
-  "author": "Christopher McCulloh <cmcculloh@salesforce.com>",
-  "contributor": "Chris Corwin <ccorwin@salesforce.com>"
+  }
 }

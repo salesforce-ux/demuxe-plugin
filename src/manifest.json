@@ -3,13 +3,13 @@
   "icon": "icon.png",
   "commands": [
     {
-      "name": "export magick flow",
+      "name": "Export Magick Flow",
       "identifier": "demuxe.export-magick-flow",
       "script": "./export.js"
     }
   ],
   "menu": {
-    "title": "demuxe",
+    "title": "Demuxe",
     "items": [
       "demuxe.export-magick-flow"
     ]
