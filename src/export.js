@@ -51,17 +51,75 @@ function getSettings(context) {
 		assetsDirName: 'assets'
 	};
 
-	// TODO: Make this backwards compatible
-	context.document.pages().forEach((page) => {
-		if (page.name().toLowerCase() === 'magick-flows-export') {
-			page.artboards().forEach((artboard) => {
-				artboard.layers().forEach((layer) => {
-					if (layer.name().toLowerCase() === "magick-flows-path") {
-						settings = parseSettingsFromString(layer.attributedString().string(), settings);
-					} else if (layer.name().toLowerCase() === "settings-main") {
-						let silentPath = parseSettingsFromString(layer.attributedString().string(), settings).silent_path_main;
+	const doc = sketch.fromNative(context.document);
 
-						settings.magick_flows_path = silentPath.replace(/\/main$/i, '');
+	doc.pages.forEach((page) => {
+		if (page.name.toLowerCase() === 'magick-flows-export') {
+			page.layers.forEach((artboard) => {
+				artboard.layers.forEach((layer) => {
+					if (layer.name.toLowerCase() === "magick-flows-path") {
+						settings = parseSettingsFromString(layer.text, settings);
+					} else if (layer.name.toLowerCase() === "settings-main") {
+						let silentPath = parseSettingsFromString(layer.text, settings);
+
+						settings.magick_flows_path = silentPath.silent_path_main;
+					} else if (layer.name.toLowerCase() === "settings-assets") {
+						UI.getInputFromUser(
+							'Delete deprecated "settings-assets" layer?',
+							{
+								type: UI.INPUT_TYPE.selection,
+								possibleValues: ['Yes', 'No', 'Choose for me'],
+							},
+							(err, value) => {
+								if (err) {
+									// most likely the user canceled the input
+									return;
+								}
+
+								if (value !== 'No') {
+									layer.remove();
+								} else {
+									UI.alert('Darth Says', '"That name has no longer has any meaning for me."\n\nhttps://tenor.com/view/darth-vader-star-wars-luke-skywalker-dont-say-that-name-no-meaning-gif-17565881');
+								}
+
+
+							}
+						)
+					}
+
+					if (settings.magick_flows_path && settings.magick_flows_path.includes('url-slug')) {
+						UI.getInputFromUser(
+							'It appears you have not yet set your path! Open Demuxe and click the "copy path" icon for your Magick Flow and supply it here.',
+							{
+								initialValue: settings.magick_flows_path,
+								numberOfLines: 3
+							},
+							(err, value) => {
+								if (err) {
+									// most likely the user canceled the input
+									return;
+								}
+
+								if (value.includes('url-slug')) {
+									UI.alert('Warning', `It looks like you did not update your path. Your demo-slug is almost certainly not "url-slug".`);
+								}
+
+								// not Text Layer
+								if (layer.type !== String(sketch.Types.Text)) {
+									// console.log(JSON.stringify(layer, null, '  '));
+
+									console.log('something is wrong here', layer.type);
+								}
+
+								// https://github.com/tgfjt/sketch-add-trailing-space/blob/master/src/my-command.js
+								// remove trailing slash and/or /main
+								const correctedValue = value.replace(/\/(main)?$/i, '');
+								layer.text = `magick_flows_path=${correctedValue}`;
+								layer.name = 'magick-flows-path';
+
+								settings.magick_flows_path = correctedValue;
+							}
+						)
 					}
 				})
 			})
