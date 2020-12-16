@@ -46,6 +46,11 @@ const parseSettingsFromString = (string, settings) => {
 }
 
 const fixName = (settings, layer) => {
+	if (settings.magick_flows_path && layer.name === 'settings-main') {
+		layer.name = 'magick-flows-path';
+		layer.text = `magick_flows_path=${settings.magick_flows_path}`;
+	}
+
 	if (settings.magick_flows_path && layer.text.match(/\/(main(\/)?)?$/i)) {
 		layer.text = layer.text.replace(/\/(main(\/)?)?$/i, '');
 		settings.magick_flows_path = settings.magick_flows_path.replace(/\/(main(\/)?)?$/i, '');
