@@ -104,16 +104,12 @@ const getSettings = (context) => {
 					if (layer.name.toLowerCase() === "magick-flows-path") {
 						settings = parseSettingsFromString(layer.text, settings);
 
-						const ret = fixName(settings, layer);
-						layer = ret.layer;
-						settings = ret.settings;
+						({settings, layer} = fixName(settings, layer));
 					} else if (layer.name.toLowerCase() === "settings-main") {
 						let silentPath = parseSettingsFromString(layer.text, settings);
 
 						settings.magick_flows_path = silentPath.silent_path_main;
-						const ret = fixName(settings, layer);
-						layer = ret.layer;
-						settings = ret.settings;
+						({settings, layer} = fixName(settings, layer));
 					} else if (layer.name.toLowerCase() === "settings-assets") {
 						UI.getInputFromUser(
 							'Delete deprecated "settings-assets" layer?',
