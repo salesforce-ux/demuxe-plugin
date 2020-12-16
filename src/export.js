@@ -45,7 +45,51 @@ const parseSettingsFromString = (string, settings) => {
 	return settings;
 }
 
-function getSettings(context) {
+const fixName = (settings, layer) => {
+	if (settings.magick_flows_path && layer.text.match(/\/(main(\/)?)?$/i)) {
+		layer.text = layer.text.replace(/\/(main(\/)?)?$/i, '');
+		settings.magick_flows_path = settings.magick_flows_path.replace(/\/(main(\/)?)?$/i, '');
+	}
+
+	if (settings.magick_flows_path && settings.magick_flows_path.includes('url-slug')) {
+		UI.getInputFromUser(
+			'It appears you have not yet set your path! Open Demuxe and click the "copy path" icon for your Magick Flow and supply it here.',
+			{
+				initialValue: settings.magick_flows_path,
+				numberOfLines: 3
+			},
+			(err, value) => {
+				if (err) {
+					// most likely the user canceled the input
+					return;
+				}
+
+				if (value.includes('url-slug')) {
+					UI.alert('Warning', `It looks like you did not update your path. Your demo-slug is almost certainly not "url-slug".`);
+				}
+
+				// not Text Layer
+				if (layer.type !== String(sketch.Types.Text)) {
+					// console.log(JSON.stringify(layer, null, '  '));
+
+					console.log('something is wrong here', layer.type);
+				}
+
+				// https://github.com/tgfjt/sketch-add-trailing-space/blob/master/src/my-command.js
+				// remove trailing slash and/or /main
+				const correctedValue = value.replace(/\/(main(\/)?)?$/i, '');
+				layer.text = `magick_flows_path=${correctedValue}`;
+				layer.name = 'magick-flows-path';
+
+				settings.magick_flows_path = correctedValue;
+			}
+		)
+	}
+
+	return {settings, layer};
+}
+
+const getSettings = (context) => {
 	let settings = {
 		mainDirName: 'main',
 		assetsDirName: 'assets'
@@ -59,10 +103,17 @@ function getSettings(context) {
 				artboard.layers.forEach((layer) => {
 					if (layer.name.toLowerCase() === "magick-flows-path") {
 						settings = parseSettingsFromString(layer.text, settings);
+
+						const ret = fixName(settings, layer);
+						layer = ret.layer;
+						settings = ret.settings;
 					} else if (layer.name.toLowerCase() === "settings-main") {
 						let silentPath = parseSettingsFromString(layer.text, settings);
 
 						settings.magick_flows_path = silentPath.silent_path_main;
+						const ret = fixName(settings, layer);
+						layer = ret.layer;
+						settings = ret.settings;
 					} else if (layer.name.toLowerCase() === "settings-assets") {
 						UI.getInputFromUser(
 							'Delete deprecated "settings-assets" layer?',
@@ -81,43 +132,6 @@ function getSettings(context) {
 								} else {
 									UI.alert('Darth Says', '"That name has no longer has any meaning for me."\n\nhttps://tenor.com/view/darth-vader-star-wars-luke-skywalker-dont-say-that-name-no-meaning-gif-17565881');
 								}
-
-
-							}
-						)
-					}
-
-					if (settings.magick_flows_path && settings.magick_flows_path.includes('url-slug')) {
-						UI.getInputFromUser(
-							'It appears you have not yet set your path! Open Demuxe and click the "copy path" icon for your Magick Flow and supply it here.',
-							{
-								initialValue: settings.magick_flows_path,
-								numberOfLines: 3
-							},
-							(err, value) => {
-								if (err) {
-									// most likely the user canceled the input
-									return;
-								}
-
-								if (value.includes('url-slug')) {
-									UI.alert('Warning', `It looks like you did not update your path. Your demo-slug is almost certainly not "url-slug".`);
-								}
-
-								// not Text Layer
-								if (layer.type !== String(sketch.Types.Text)) {
-									// console.log(JSON.stringify(layer, null, '  '));
-
-									console.log('something is wrong here', layer.type);
-								}
-
-								// https://github.com/tgfjt/sketch-add-trailing-space/blob/master/src/my-command.js
-								// remove trailing slash and/or /main
-								const correctedValue = value.replace(/\/(main)?$/i, '');
-								layer.text = `magick_flows_path=${correctedValue}`;
-								layer.name = 'magick-flows-path';
-
-								settings.magick_flows_path = correctedValue;
 							}
 						)
 					}
