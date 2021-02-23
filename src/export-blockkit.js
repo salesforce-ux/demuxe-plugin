@@ -78,8 +78,8 @@ const getExportableArtboards = (doc) => {
 	}
 }
 
-const exportAsset = (dir, artboard, exportCount) => {
-	console.log('artboard', artboard);
+const exportAsset = (dir, artboard) => {
+	// console.log('artboard', artboard);
 
 	let blocks = artboard.overrides.reduce((blocks, override) => {
 
@@ -90,7 +90,7 @@ const exportAsset = (dir, artboard, exportCount) => {
 		blocks[override.affectedLayer.name] = override.value;
 
 		return blocks;
-	}, { x: artboard.frame.x, y: artboard.frame.y });
+	}, { x: artboard.frame.x, y: artboard.frame.y, width: artboard.frame.width, height: artboard.frame.height });
 
 	// console.log(blocks);
 
@@ -98,13 +98,15 @@ const exportAsset = (dir, artboard, exportCount) => {
 }
 
 const exportAssets = (artboards, dir, exportCount) => {
-	const blocks = artboards.reduce((b, artboard) => {
-		const results = exportAsset(dir, artboard, exportCount);
-		exportCount = results.exportCount;
+	const aggregatedMessages = [];
+	const blocks = artboards.reduce((steps, artboard, count) => {
+		const results = exportAsset(dir, artboard);
 
-		b.push(results.blocks);
+		aggregatedMessages.push(results.blocks);
 
-		return b;
+		steps.push({ step: count, data: JSON.parse(JSON.stringify(aggregatedMessages))});
+
+		return steps;
 	}, []);
 
 	return { blocks };
@@ -121,20 +123,33 @@ let exportCount = {};
 const mainExportResults = exportAssets(artboards.main, absPath(settings.magick_flows_path + '/main'), exportCount);
 
 
-console.log(mainExportResults);
+mainExportResults.blocks.forEach(block => {
+	const text = new Text({
+		text: JSON.stringify(block.data)
+	})
 
+	const options = { formats: 'json', 'use-id-for-name': true, output: settings.magick_flows_path }
+	const sketchJSON = sketch.export(text, options);
 
-const text = new Text({
-	text: JSON.stringify(mainExportResults)
+	const errorPtr = MOPointer.alloc().init();
+
+	const filePath = absPath(settings.magick_flows_path + '00' + block.step + '0.json');
+	fm.removeItemAtPath_error_(filePath, errorPtr);
+	fm.moveItemAtPath_toPath_error_(absPath(settings.magick_flows_path + text.id + '.json'), filePath, errorPtr);
 })
 
 
-const options = { formats: 'json', 'use-id-for-name': true, output: settings.magick_flows_path }
-const sketchJSON = sketch.export(text, options);
 
-const errorPtr = MOPointer.alloc().init();
 
-const filePath = absPath(settings.magick_flows_path + '0000.json');
-fm.removeItemAtPath_error_(filePath, errorPtr);
-fm.moveItemAtPath_toPath_error_(absPath(settings.magick_flows_path + text.id + '.json'), filePath, errorPtr);
+
+// Instead of making the designer design each step screen in its entirety,
+// take what they have built and create each step in it's entirety for them.
+// So, if there are 4 messages, make:
+// 0000 - one message (message A)
+// 0001 - two messages (message A + B)
+// 0002 - three messages (mesage A + B + C)
+// 0003 - four messages (message A + B + C + D)
+
+
+
 
